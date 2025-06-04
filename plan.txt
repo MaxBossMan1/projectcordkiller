@@ -1,0 +1,125 @@
+Okay, let's outline an MVP plan focusing on your core privacy and security principles with your chosen tech stack. The goal is a functional, secure base that can be built upon.
+
+Given your choice of server-routed real-time communications for privacy (avoiding P2P), this means voicevideo will need a Selective Forwarding Unit (SFU) or similar media server, and text chat will be relayed through your backend.
+MVP Plan Privacy-Focused Comms Platform
+
+Core Differentiator Demonstrably superior privacy and security compared to mainstream alternatives.
+
+Tech Stack Summary
+
+    Frontend React (TypeScript)
+    Desktop App Electron
+    Backend Node.js (TypeScript) with Express.js or Fastify
+    Real-time (Text) WebSockets (e.g., ws library or Socket.IO on Node.js)
+    Real-time (Voice) WebRTC with LiveKit SFU (open-source, production-ready SFU with simple deployment)
+    Database PostgreSQL
+    Deployment Google Cloud
+
+Phase 1 Core Secure Text Communication & Foundation
+
+This phase focuses on getting the absolute essentials for secure text chat and user management up and running.
+
+Features
+
+    Secure User Authentication & Management
+        User registration (email, strong hashed password using Argon2 or bcrypt).
+        Email verification.
+        Secure login.
+        Two-Factor Authentication (2FA) using TOTP (e.g., speakeasy, otplib libraries). This is crucial for a security-focused app.
+        Basic user profiles (username, avatar - keep data minimal).
+        Ability to delete account (and associated data).
+    Server & Channel Structure
+        Users can create Servers (or your chosen term for communities).
+        Within Servers, users can create text Channels.
+        Basic server settings (name, icon).
+    Secure Text Chat
+        Real-time text messaging in Channels (relayed via WebSocket server).
+        End-to-End Encrypted (E2EE) Direct Messages (DMs) between two users using Signal Protocol. This is a key feature for your privacy focus.
+            Signal Protocol provides proven security with Double Ratchet algorithm for forward secrecy and post-compromise security. Use libsignal-protocol-javascript for implementation.
+        Group DMs (initially, these might not be E2EE due to complexity, but this should be clearly communicated; server-side encryption at rest and in transit is a must).
+        Basic message formatting (markdown subset).
+        Message history (with clear user controls for deletion, especially in DMs).
+        Typing indicators, read receipts (make these toggleable for privacy).
+    Roles & Basic Permissions (Simplified)
+        Server Owner (creator).
+        Admin (can manage channels, users).
+        Member.
+        Simple invite system (e.g., unique, expiring links).
+    Electron Desktop Application
+        Packaging of the React web application.
+        Basic auto-update mechanism (e.g., electron-updater).
+    Privacy Dashboard
+        A simple in-app section explaining data handling practices, what's encrypted, what's collected (and why it's minimal).
+
+Technical Implementation Notes for Phase 1
+
+    Backend API for user auth, serverchannel management, WebSocket server for text chat relay and E2EE signaling for DMs.
+    Database PostgreSQL schemas for users, servers, channels, messages (encrypted at rest), E2EE keysmetadata for DMs (handled carefully).
+    Security HTTPS for all communication, secure password hashing, input validation, rate limiting.
+
+Phase 2 Server-Routed Voice Chat & Polish
+
+This phase introduces secure voice communication and refines the existing features.
+
+Features
+
+    Secure Voice Chat (Server-Routed)
+        Voice channels within Servers.
+        WebRTC for audio transport, but all media routed through your SFU.
+        The SFU manages media streams, reducing client load and hiding IP addresses.
+        Voice activity indicators.
+        Mute selfothers (for admins), deafen.
+        Encryption in transit for voice (DTLS-SRTP, standard with WebRTC and SFUs).
+    Enhanced UIUX
+        Refine the user interface based on early feedback.
+        Improve accessibility.
+    Strengthened Security & Privacy Features
+        Implement more granular privacy settings.
+        Review and harden all security aspects.
+    Basic Moderation Tools
+        Kickban users from a server (by OwnerAdmin).
+
+Technical Implementation Notes for Phase 2
+
+    SFU Implementation
+        LiveKit SFU Chosen for simplicity and production-readiness. Open-source, single binary deployment, excellent documentation.
+        LiveKit provides REST API for room management that integrates cleanly with your Node.js backend.
+        Deploy on GKE (containerized) or Compute Engine for full control over infrastructure.
+        Your backend handles room creation via LiveKit's REST API and manages user admission to voice channels.
+        Built-in TURN server functionality and proper WebRTC encryption (DTLS-SRTP).
+
+Google Cloud Deployment Strategy for MVP
+
+    Compute
+        Backend API & WebSocket Server
+            Cloud Run Ideal for stateless HTTP services and can handle WebSockets. Pay-per-use, scales to zero. Good for starting.
+        SFU (Voice Server)
+            Google Kubernetes Engine (GKE) If you containerize your SFU (e.g., Mediasoup in Docker), GKE provides robust orchestration, scaling, and networking.
+            Alternatively, Compute Engine (GCE) VMs If you prefer more direct control over the SFU environment. You'll need to manage OS, networking, etc.
+    Database
+        Cloud SQL for PostgreSQL Fully managed, handles backups, updates, replication.
+    Storage
+        Cloud Storage For static assets (React app build files), user avatars (if any), and potentially for storing E2EE encrypted attachments in the future.
+    Networking
+        Cloud Load Balancing To distribute traffic to your Cloud Run services and GKEGCE instances. Essential for HTTPS termination and reliability.
+        Cloud DNS For managing your application's domain.
+        VPC Network & Firewall Rules To create a secure network for your backend services and database, restricting access appropriately.
+    Container Management
+        Artifact Registry (or Google Container Registry - gcr.io) To store your Docker images for Cloud Run and GKE.
+    Identity (Consider)
+        Identity Platform (Firebase Auth backend) While you can build your own auth, Identity Platform provides a secure, managed solution for user authentication, including 2FA, which can offload significant security burdens. It integrates well with other Google Cloud services.
+    Operations
+        Cloud Logging & Cloud Monitoring For application logs, performance metrics, and alerting.
+
+Privacy & Security Implementation Notes for MVP
+
+    Data Minimization Only collect absolutely essential user data.
+    Encryption
+        HTTPS everywhere.
+        Data at rest encryption for PostgreSQL (Cloud SQL handles this).
+        E2EE for DMs (client-side logic, secure key exchange).
+        DTLS-SRTP for voice chat via SFU.
+    Code Audits (Post-MVP) Plan for security audits, especially around cryptographic implementations.
+    Transparency Clearly document your privacy and security practices for users.
+
+This MVP plan provides a solid foundation. The E2EE for DMs and the SFU setup for voice are the most complex parts but are critical for your stated goals. Good luck!
